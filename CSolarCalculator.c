@@ -7,7 +7,12 @@
 // Most formulae are taken from Astronomical Algorithms by Jean Meeus and optimized for 8-bit AVR platform.
 //======================================================================================================================
 
-#include "math.h"
+#ifdef ARDUINO
+#include <Arduino.h>
+#else
+#include <math.h>
+#endif
+
 #include "CSolarCalculator.h"
 
 const double SUNRISESET_STD_ALTITUDE = -0.8333;
@@ -37,6 +42,7 @@ struct JulianDay jdFromDate(int year, int month, int day, int hour, int minute, 
 // Time T is measured in Julian centuries (36525 ephemeris days from the epoch J2000.0)
 //======================================================================================================================
 
+#ifndef ARDUINO
 double radians(double deg)
 {
     return deg * M_PI / 180;
@@ -46,6 +52,7 @@ double degrees(double rad)
 {
     return rad * 180 / M_PI;
 }
+#endif
 
 double wrapTo360(double angle)
 {

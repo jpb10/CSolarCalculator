@@ -10,6 +10,10 @@
 #ifndef CSOLARCALCULATOR_H
 #define CSOLARCALCULATOR_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const double SUNRISESET_STD_ALTITUDE;
 extern const double CIVIL_DAWNDUSK_STD_ALTITUDE;
 extern const double NAUTICAL_DAWNDUSK_STD_ALTITUDE;
@@ -31,8 +35,6 @@ struct JulianDay jdFromDate(int year, int month, int day, int hour, int minute, 
 //======================================================================================================================
 
 // Utilities
-double radians(double deg);
-double degrees(double rad);
 double wrapTo360(double angle);
 double wrapTo180(double angle);
 
@@ -114,5 +116,9 @@ void calcAstronomicalDawnDuskFromUnix(unsigned long utc, double latitude, double
                                       double *transit, double *dawn, double *dusk);
 void calcAstronomicalDawnDuskFromDate(int year, int month, int day, double latitude, double longitude,
                                       double *transit, double *dawn, double *dusk);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  //CSOLARCALCULATOR_H
