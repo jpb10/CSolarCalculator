@@ -23,7 +23,7 @@ const double ASTRONOMICAL_DAWNDUSK_STD_ALTITUDE = -18.0;
 struct JulianDay jdFromUnix(unsigned long utc)
 {
     struct JulianDay jd;
-    jd.JD = (long)(utc / 86400) + 2440587.5;
+    jd.JD = (unsigned long)(utc / 86400) + 2440587.5;
     jd.m = (utc % 86400) / 86400.0;
     return jd;
 }
@@ -80,7 +80,7 @@ double calcJulianDay(int year, int month, int day)
 
 double calcJulianCent(struct JulianDay jd)
 {
-    return (jd.JD - 2451545 + jd.m) / 36525;
+    return ((jd.JD - 2451545) + jd.m) / 36525;
 }
 
 double calcGeomMeanLongSun(double T)
@@ -110,7 +110,7 @@ double calcMeanObliquityOfEcliptic(double T)
     return 23.4392911 - T * 0.0130042;  // in degrees
 }
 
-// Mean geocentric equatorial coordinates, accurate to ~0.01 degree
+// Mean geocentric equatorial coordinates, accurate to ~1 arcminute
 void calcSolarCoordinates(double T, double *ra, double *dec)
 {
     double L0 = calcGeomMeanLongSun(T);
@@ -143,17 +143,6 @@ double calcRefraction(double elev)
         return 1.02 / tan(radians(elev + 10.3 / (elev + 5.11))) / 60;  // Sæmundsson (1986)
 }
 
-// Equation of ephemeris time by Smart (1978)
-double equationOfTimeSmart(double T)
-{
-    double L0 = calcGeomMeanLongSun(T);
-    double M = calcGeomMeanAnomalySun(T);
-
-    // Using numerical values for the eccentricity and obliquity in 2025
-    return 2.465 * sin(2 * radians(L0)) - 1.913 * sin(radians(M)) + 0.165 * sin(radians(M)) * cos(2 * radians(L0)) -
-           0.053 * sin(4 * radians(L0)) - 0.02 * sin(2 * radians(M));  // in degrees
-}
-
 //======================================================================================================================
 // Solar calculator
 //
@@ -164,7 +153,12 @@ double equationOfTimeSmart(double T)
 void calcEquationOfTime(struct JulianDay jd, double *E)
 {
     double T = calcJulianCent(jd);
-    *E = 4 * equationOfTimeSmart(T);
+    double L0 = calcGeomMeanLongSun(T);
+
+    double ra, dec;
+    calcSolarCoordinates(T, &ra, &dec);
+
+    *E = 4 * wrapTo180(L0 - 0.00569 - ra);
 }
 
 // Sun's geocentric (as seen from the center of the Earth) equatorial coordinates, in degrees and AUs
@@ -207,7 +201,7 @@ void calcRiseSetTimes(double m[3], struct JulianDay jd, double latitude, double 
     double H0 = degrees(acos((sin(radians(h0)) - sin(radians(latitude)) * sin(radians(dec))) /
                         (cos(radians(latitude)) * cos(radians(dec)))));
 
-    m[0] = wrapTo360(ra - longitude - GMST + jd.m * 360) / 360;
+    m[0] = jd.m + wrapTo180(ra - longitude - GMST) / 360;
     m[1] = m[0] - H0 / 360;
     m[2] = m[0] + H0 / 360;
 }
@@ -220,15 +214,17 @@ void calcSunriseSunset(struct JulianDay jd, double latitude, double longitude,
     m[0] = 0.5 - longitude / 360;
 
     for (int i = 0; i <= iterations; i++)
-        for (int j = 0; j < 3; j++)
+        for (int event = 0; event < 3; event++)
         {
-            jd.m = m[j];
+            jd.m = m[event];
             calcRiseSetTimes(times, jd, latitude, longitude, altitude);
-            m[j] = times[j];
+            m[event] = times[event];
 
-            if (i == 0)  // first iteration
+            // First iteration, approximate rise and set times
+            if (i == 0)
             {
-                m[1] = times[1]; m[2] = times[2];  // approximate rise and set times
+                m[1] = times[1];
+                m[2] = times[2];
                 break;
             }
         }

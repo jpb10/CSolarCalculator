@@ -51,11 +51,12 @@ double calcSunRadVector(double T);
 double calcMeanObliquityOfEcliptic(double T);
 void calcSolarCoordinates(double T, double *ra, double *dec);
 
-// Sidereal time, Sun's position in the sky
+// Sidereal time at Greenwich
 double calcGrMeanSiderealTime(struct JulianDay jd);
+
+// Sun's position in the sky
 void equatorial2horizontal(double H, double dec, double lat, double *az, double *el);
 double calcRefraction(double elev);
-double equationOfTimeSmart(double T);
 
 //======================================================================================================================
 // Solar calculator
